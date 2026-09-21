@@ -8,6 +8,12 @@ It is deliberately not an autonomous authority layer.
 
 > **Unofficial community integration:** TypeSafe-as-a-Judge is not affiliated with, sponsored by, or endorsed by TypeSafe AI, OpenAI, Anthropic, Codex, or Claude. TypeSafe, Jev, OpenAI, Codex, Claude, and related names are the property of their respective owners.
 
+## Community
+
+Arik Aizikovich is currently the sole maintainer and contributor. Contributions are welcome: bug reports, documentation improvements, new examples, test cases, security feedback, and pull requests are all useful.
+
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. For security concerns, follow [SECURITY.md](SECURITY.md) instead of opening a public issue. The project uses Apache-2.0; contributions are accepted under the same license unless we explicitly agree otherwise.
+
 ## What the MCP provides
 
 | Tool | Use it when | What it returns |
