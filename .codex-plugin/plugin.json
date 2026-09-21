@@ -1,0 +1,37 @@
+{
+  "name": "typesafe-as-a-judge",
+  "version": "0.1.0+codex.20260921131006",
+  "description": "Bounded TypeSafe Jev judgments for routing, ranking, extraction, verification, and escalation.",
+  "author": {
+    "name": "Arik Aizikovich",
+    "url": "https://github.com/E-FL"
+  },
+  "homepage": "https://github.com/E-FL/typesafe-as-a-judge",
+  "repository": "https://github.com/E-FL/typesafe-as-a-judge",
+  "license": "MIT",
+  "keywords": [
+    "typesafe",
+    "jev",
+    "mcp",
+    "routing",
+    "verification"
+  ],
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "TypeSafe-as-a-Judge",
+    "shortDescription": "Typed Jev judgments with confidence-aware review gates.",
+    "longDescription": "Use TypeSafe Jev for bounded semantic judgments. The plugin can route, rank, select pre-parsed values, verify evidence, and recommend review; it never performs the resulting action.",
+    "developerName": "Arik Aizikovich",
+    "category": "DeveloperTools",
+    "capabilities": [
+      "Read",
+      "Network"
+    ],
+    "defaultPrompt": [
+      "Route these support requests and flag uncertain results for review.",
+      "Rank these implementation candidates against this requirement.",
+      "Verify these claims against their supporting evidence."
+    ]
+  }
+}

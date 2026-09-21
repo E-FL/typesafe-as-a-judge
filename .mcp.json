@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "typesafe-as-a-judge": {
+      "command": "node",
+      "args": ["server/index.mjs"],
+      "cwd": ".",
+      "env_vars": ["TYPESAFE_API_KEY"],
+      "env": {}
+    }
+  }
+}

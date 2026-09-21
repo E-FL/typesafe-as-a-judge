@@ -1,0 +1,17 @@
+{
+  "name": "typesafe-as-a-judge",
+  "metadata": {
+    "description": "Confidence-aware TypeSafe Jev judgments for coding agents."
+  },
+  "owner": {
+    "name": "Arik Aizikovich",
+    "url": "https://github.com/E-FL"
+  },
+  "plugins": [
+    {
+      "name": "typesafe-as-a-judge",
+      "description": "Route, rank, extract, verify, and escalate with bounded TypeSafe Jev judgments.",
+      "source": "./"
+    }
+  ]
+}
