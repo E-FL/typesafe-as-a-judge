@@ -4,7 +4,7 @@ import readline from "node:readline";
 import test from "node:test";
 
 test("the dependency-free stdio server exposes all tools and runs the local escalation gate", async () => {
-  const child = spawn(process.execPath, ["server/index.mjs"], { cwd: process.cwd(), stdio: ["pipe", "pipe", "pipe"] });
+  const child = spawn(process.execPath, ["scripts/launch-mcp.mjs"], { cwd: process.cwd(), stdio: ["pipe", "pipe", "pipe"] });
   const lines = readline.createInterface({ input: child.stdout, crlfDelay: Infinity });
   const responses = [];
   lines.on("line", (line) => responses.push(JSON.parse(line)));

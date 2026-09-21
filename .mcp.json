@@ -2,7 +2,7 @@
   "mcpServers": {
     "typesafe-as-a-judge": {
       "command": "node",
-      "args": ["server/index.mjs"],
+      "args": ["scripts/launch-mcp.mjs"],
       "cwd": ".",
       "env_vars": ["TYPESAFE_API_KEY"],
       "env": {}

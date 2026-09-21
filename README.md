@@ -22,11 +22,29 @@ Only send the minimum relevant state to TypeSafe. Do not send credentials, acces
 - Node.js 20 or later
 - A TypeSafe API key in `TYPESAFE_API_KEY`
 
-Do not store the key in this repository. On Windows, set it for your user account and restart the client:
+## Guided setup
+
+After installing the plugin, run the setup script from a checkout of this repository. It hides the token while you type it, validates the token with a harmless TypeSafe Jev request, and only saves it after validation succeeds. It never writes the token to the repository, plugin configuration, command arguments, or logs.
 
 ```powershell
-setx TYPESAFE_API_KEY "your-key"
+git clone https://github.com/E-FL/typesafe-as-a-judge.git
+cd typesafe-as-a-judge
 ```
+
+On Windows:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup.ps1
+```
+
+The Windows script stores the token in your user environment. On macOS or Linux:
+
+```bash
+chmod +x ./scripts/setup.sh
+./scripts/setup.sh
+```
+
+The Unix script stores the token in `~/.config/typesafe-as-a-judge/token` with owner-only permissions. The MCP launcher reads that file when the environment variable is not present. Do not paste the token into Codex or Claude chat.
 
 ## Install in Codex
 
@@ -35,7 +53,7 @@ codex plugin marketplace add E-FL/typesafe-as-a-judge
 codex plugin add typesafe-as-a-judge@typesafe-as-a-judge
 ```
 
-The Codex plugin forwards `TYPESAFE_API_KEY` from its launch environment. Start a new Codex task after installation so the MCP server and guidance skill load.
+The Codex plugin forwards `TYPESAFE_API_KEY` from its launch environment. Run guided setup, then start a new Codex task so the MCP server and guidance skill load.
 
 ## Install in Claude Code
 
@@ -44,7 +62,7 @@ claude plugin marketplace add E-FL/typesafe-as-a-judge
 claude plugin install typesafe-as-a-judge@typesafe-as-a-judge
 ```
 
-The Claude plugin uses the same shared MCP server. Start a new Claude Code session after installation and approve the project/plugin MCP tools when prompted.
+The Claude plugin uses the same shared MCP server. Run guided setup, then start a new Claude Code session and approve the project/plugin MCP tools when prompted.
 
 ## Develop and test
 
