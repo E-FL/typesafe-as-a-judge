@@ -8,6 +8,6 @@
   },
   "homepage": "https://github.com/E-FL/typesafe-as-a-judge",
   "repository": "https://github.com/E-FL/typesafe-as-a-judge",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "keywords": ["typesafe", "jev", "mcp", "routing", "verification"]
 }

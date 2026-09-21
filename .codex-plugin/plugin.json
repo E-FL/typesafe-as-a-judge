@@ -1,6 +1,6 @@
 {
   "name": "typesafe-as-a-judge",
-  "version": "0.1.0+codex.20260921133617",
+  "version": "0.1.0+codex.20260921143141",
   "description": "Bounded TypeSafe Jev judgments for routing, ranking, extraction, verification, and escalation.",
   "author": {
     "name": "Arik Aizikovich",
@@ -8,7 +8,7 @@
   },
   "homepage": "https://github.com/E-FL/typesafe-as-a-judge",
   "repository": "https://github.com/E-FL/typesafe-as-a-judge",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "keywords": [
     "typesafe",
     "jev",
