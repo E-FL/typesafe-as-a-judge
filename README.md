@@ -290,6 +290,41 @@ The agent should:
 
 Confidence is not correctness. A high-confidence answer can still be wrong, and a low-confidence answer can reflect missing evidence rather than a false conclusion.
 
+## Measured development-planning comparison
+
+This example uses a realistic internal planning question that arises while extending this MCP. It is included to illustrate the decision shape, latency, and token accounting—not as a general performance benchmark.
+
+**User request:** Add an MCP tool named `typesafe_compare` that compares two proposed implementation plans, returns an ordered score with a review recommendation, and adds tests and documentation.
+
+**Internal question:** Which existing file should the coding agent inspect first?
+
+**Candidates:**
+
+- `server/judge.mjs` - TypeSafe API client and existing tool handlers.
+- `server/index.mjs` - MCP tool schemas and JSON-RPC dispatch.
+- `tests/judge.test.mjs` - unit tests for tool behavior.
+- `README.md` - tool contracts and use cases.
+
+**Observation:** The agent should locate the primary MCP integration surface before planning the implementation, tests, and documentation.
+
+| Measure | Ordinary reasoning | TypeSafe MCP judgment |
+| --- | --- | --- |
+| Model | `gpt-5.6-luna` | `jev-1.13.0` |
+| Result | `server/index.mjs` | `server/index.mjs` |
+| Elapsed time | 6.40 s | 0.861 s |
+| Agent usage | 13,236 input, 8,960 cached input, 52 output tokens | 1,174 input, 71 output tokens |
+| Price estimate | ~$0.00110 API-equivalent | At least ~$0.0000493 input-only |
+| Action | `proceed` | `proceed` |
+| Reason | It defines MCP schemas and JSON-RPC dispatch, so it is the first integration surface to inspect. | It ranked first with score 1.98 and confidence 0.98. |
+
+Both paths selected the same first file and the same action. The TypeSafe path adds a reusable score, probability distribution, and confidence signal that a deterministic gate can consume.
+
+### Price assumptions and limits
+
+- The Luna estimate uses the current API rates of $0.20 per million uncached input tokens, $0.02 per million cached input tokens, and $1.20 per million output tokens. It is an API-equivalent calculation; Codex subscription billing can differ. See the [GPT-5.6 Luna model page](https://developers.openai.com/api/docs/models/gpt-5.6-luna).
+- The TypeSafe estimate uses the published $42 per billion input tokens: `1,174 x $42 / 1,000,000,000 = $0.000049308`. TypeSafe's public figure did not show output-token pricing, so this is a lower bound. See [TypeSafe AI](https://typesafe.ai/).
+- The two runs answer the same internal question, but they are not a controlled benchmark. The left side is an end-to-end Codex run; the right side is a direct MCP ranking call. Their token accounting measures different layers.
+
 ## What it will not decide
 
 Do not use this MCP as the authority for:

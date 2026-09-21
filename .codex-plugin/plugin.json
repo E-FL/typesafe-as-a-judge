@@ -1,6 +1,6 @@
 {
   "name": "typesafe-as-a-judge",
-  "version": "0.1.0+codex.20260921144118",
+  "version": "0.1.0+codex.20260921150453",
   "description": "Bounded TypeSafe Jev judgments for routing, ranking, extraction, verification, and escalation.",
   "author": {
     "name": "Arik Aizikovich",
