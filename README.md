@@ -24,6 +24,7 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Fo
 | `typesafe_verify` | One claim needs to be checked against evidence | Support probability and a `proceed`/`review` recommendation |
 | `typesafe_judge` | Several independent narrow questions should run over shared state | Raw Choice, Score, and Noul signals for the caller's policy |
 | `typesafe_usage_summary` | A user asks how Jev was used or what it theoretically substituted | Current-process calls, tokens, elapsed time, per-tool breakdown, and declared substitute-model intent |
+| `typesafe_session_mode` | A user wants Jev enabled, disabled, or inspected for the current session | `auto`, `enabled`, or `disabled` mode plus billing-context and reason metadata |
 | `typesafe_escalation_gate` | Existing confidence or risk signals need one deterministic gate | `proceed` when no signal fires, otherwise `review` |
 
 The tools are read-only. They do not edit files, approve actions, change records, invoke another model, or contact a third party.
@@ -291,6 +292,22 @@ When a Jev call intentionally replaces a named model, include `comparison_model`
 That records substitution intent; it does not run Luna or assert a measured saving. A summary can then report that Jev handled a number of calls that were declared as alternatives to Luna, alongside the observed Jev tokens and elapsed time. It must say that token, time, and cost savings are theoretical unless a real baseline run exists.
 
 The telemetry is process-local and resets when the MCP server restarts. It stores no request bodies, source text, credentials, or customer data.
+
+### Enable or disable Jev for a session
+
+Use `typesafe_session_mode` when a user explicitly controls the feature:
+
+```json
+{
+  "mode": "enabled",
+  "billing_context": "plan",
+  "reason": "Prefer bounded Jev judgments for this session to conserve the main agent's plan context."
+}
+```
+
+Use `mode: "disabled"` to block Jev tool calls for the current MCP process, or `mode: "auto"` to restore the automatic policy. The tool does not edit Codex or Claude configuration and does not change the user's subscription or API billing.
+
+In automatic mode, the skill favors Jev for repeated or bounded semantic decisions—routing, ranking, candidate selection, verification, and confidence gates—especially when plan/quota conservation or review reduction matters. It does not favor Jev for exact deterministic work, open-ended implementation, permissions, tenant isolation, security authority, financial actions, destructive operations, or unsafe sensitive data.
 
 ### Theoretical alternative-model estimates
 

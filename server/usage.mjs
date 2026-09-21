@@ -1,3 +1,5 @@
+import { getSessionMode } from "./session.mjs";
+
 const MAX_EVENTS = 500;
 const events = [];
 
@@ -51,6 +53,7 @@ export function summarizeJevUsage({ comparison_model = null } = {}) {
 
   return {
     scope: "current MCP server process; resets when the process restarts",
+    session_mode: getSessionMode(),
     jev_calls: total.calls,
     input_tokens: total.input_tokens,
     output_tokens: total.output_tokens,

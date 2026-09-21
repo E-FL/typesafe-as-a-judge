@@ -29,6 +29,7 @@ test("the dependency-free stdio server exposes all tools and runs the local esca
     "typesafe_verify",
     "typesafe_judge",
     "typesafe_usage_summary",
+    "typesafe_session_mode",
     "typesafe_escalation_gate",
   ]);
   write({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "typesafe_escalation_gate", arguments: { signals: [{ id: "gap", value: 0.9, threshold: 0.8 }] } } });
@@ -37,6 +38,14 @@ test("the dependency-free stdio server exposes all tools and runs the local esca
   write({ jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "typesafe_usage_summary", arguments: {} } });
   const summary = JSON.parse((await responseFor(4)).result.content[0].text);
   assert.equal(summary.jev_calls, 0);
+  write({ jsonrpc: "2.0", id: 5, method: "tools/call", params: { name: "typesafe_session_mode", arguments: { mode: "disabled", billing_context: "plan", reason: "test" } } });
+  const disabled = JSON.parse((await responseFor(5)).result.content[0].text);
+  assert.equal(disabled.mode, "disabled");
+  write({ jsonrpc: "2.0", id: 6, method: "tools/call", params: { name: "typesafe_route", arguments: { state: "test", instructions: "Choose a route.", routes: { a: "A", b: "B" } } } });
+  const blocked = await responseFor(6);
+  assert.equal(blocked.result.isError, true);
+  write({ jsonrpc: "2.0", id: 7, method: "tools/call", params: { name: "typesafe_session_mode", arguments: { mode: "auto" } } });
+  assert.equal(JSON.parse((await responseFor(7)).result.content[0].text).mode, "auto");
   child.stdin.end();
   await new Promise((resolve) => child.once("close", resolve));
 });

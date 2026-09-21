@@ -1,6 +1,7 @@
 import readline from "node:readline";
 import { escalationGate, extract, formatError, judge, rank, route, verify } from "./judge.mjs";
 import { recordJevUsage, summarizeJevUsage } from "./usage.mjs";
+import { getSessionMode, isJevEnabled, setSessionMode } from "./session.mjs";
 
 const JEV_TOOL_NAMES = new Set(["typesafe_route", "typesafe_rank", "typesafe_extract", "typesafe_verify", "typesafe_judge"]);
 
@@ -73,6 +74,16 @@ const TOOL_DEFINITIONS = [
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
   },
   {
+    name: "typesafe_session_mode",
+    description: "Set or inspect the current MCP process Jev policy. Use enabled to force Jev, disabled to block Jev calls, or auto for the skill's policy. This does not change Codex or Claude global configuration.",
+    inputSchema: { type: "object", additionalProperties: false, properties: {
+      mode: { type: "string", enum: ["auto", "enabled", "disabled"], description: "Session Jev policy. Omit to inspect the current mode." },
+      billing_context: { type: "string", enum: ["unknown", "plan", "api"], description: "Optional context supplied by the user or host; never inferred from credentials." },
+      reason: { type: "string", description: "Why this session policy was selected." }
+    } },
+    annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }
+  },
+  {
     name: "typesafe_escalation_gate",
     description: "Apply a deterministic max-style review gate to explicit probabilities or confidences. No model call, writes, or external action occurs.",
     inputSchema: { type: "object", additionalProperties: false, required: ["signals"], properties: {
@@ -89,6 +100,7 @@ const HANDLERS = {
   typesafe_verify: verify,
   typesafe_judge: judge,
   typesafe_usage_summary: summarizeJevUsage,
+  typesafe_session_mode: (input) => input?.mode === undefined ? getSessionMode() : setSessionMode(input),
   typesafe_escalation_gate: escalationGate,
 };
 
@@ -124,6 +136,13 @@ export async function handleMessage(message, dependencies = {}) {
     const toolName = message.params?.name;
     const handler = HANDLERS[toolName];
     if (!handler) return response(id, textResult({ error: `Unknown TypeSafe-as-a-Judge tool: ${toolName}` }, true));
+    if (JEV_TOOL_NAMES.has(toolName) && !isJevEnabled()) {
+      return response(id, textResult({
+        error: "TypeSafe Jev is disabled for this MCP session.",
+        session_mode: getSessionMode(),
+        next_step: "Use typesafe_session_mode with mode=auto or mode=enabled to re-enable Jev.",
+      }, true));
+    }
     try {
       const toolArguments = message.params?.arguments ?? {};
       const payload = await handler(toolArguments, dependencies);
