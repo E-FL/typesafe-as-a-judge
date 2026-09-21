@@ -6,6 +6,8 @@ The agent remains responsible for orchestration, policy, permissions, code chang
 
 It is deliberately not an autonomous authority layer.
 
+> **Unofficial community integration:** TypeSafe-as-a-Judge is not affiliated with, sponsored by, or endorsed by TypeSafe AI, OpenAI, Anthropic, Codex, or Claude. TypeSafe, Jev, OpenAI, Codex, Claude, and related names are the property of their respective owners.
+
 ## What the MCP provides
 
 | Tool | Use it when | What it returns |
