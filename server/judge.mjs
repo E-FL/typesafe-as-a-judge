@@ -84,6 +84,7 @@ export async function evaluateSystemOne(
   { state, questions, model = DEFAULT_MODEL },
   { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = fetch, maxAttempts = 3 } = {},
 ) {
+  const startedAt = performance.now();
   assertJson(state, "state");
   assertPlainObject(questions, "questions");
   if (Object.keys(questions).length === 0) {
@@ -128,7 +129,7 @@ export async function evaluateSystemOne(
       if (!isPlainObject(body) || !isPlainObject(body.answers)) {
         throw new TypeSafeApiError("TypeSafe returned a response without an answers object.", response.status);
       }
-      return body;
+      return { ...body, elapsed_ms: Number((performance.now() - startedAt).toFixed(2)) };
     }
 
     if (RETRYABLE_STATUS_CODES.has(response.status) && attempt < maxAttempts) {
@@ -175,6 +176,7 @@ function metadata(response) {
   return {
     model: response.model,
     usage: response.usage,
+    elapsed_ms: response.elapsed_ms,
   };
 }
 

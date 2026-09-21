@@ -28,11 +28,15 @@ test("the dependency-free stdio server exposes all tools and runs the local esca
     "typesafe_extract",
     "typesafe_verify",
     "typesafe_judge",
+    "typesafe_usage_summary",
     "typesafe_escalation_gate",
   ]);
   write({ jsonrpc: "2.0", id: 3, method: "tools/call", params: { name: "typesafe_escalation_gate", arguments: { signals: [{ id: "gap", value: 0.9, threshold: 0.8 }] } } });
   const gate = JSON.parse((await responseFor(3)).result.content[0].text);
   assert.equal(gate.recommended_action, "review");
+  write({ jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "typesafe_usage_summary", arguments: {} } });
+  const summary = JSON.parse((await responseFor(4)).result.content[0].text);
+  assert.equal(summary.jev_calls, 0);
   child.stdin.end();
   await new Promise((resolve) => child.once("close", resolve));
 });

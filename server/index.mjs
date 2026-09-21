@@ -1,5 +1,8 @@
 import readline from "node:readline";
 import { escalationGate, extract, formatError, judge, rank, route, verify } from "./judge.mjs";
+import { recordJevUsage, summarizeJevUsage } from "./usage.mjs";
+
+const JEV_TOOL_NAMES = new Set(["typesafe_route", "typesafe_rank", "typesafe_extract", "typesafe_verify", "typesafe_judge"]);
 
 const TOOL_DEFINITIONS = [
   {
@@ -10,6 +13,7 @@ const TOOL_DEFINITIONS = [
       instructions: { type: "string", description: "One narrow routing question." },
       routes: { type: "object", description: "Route id to rubric description. The tool adds needs_review." },
       review_route: { type: "string", description: "Optional reserved no-match route id; defaults to needs_review." },
+      comparison_model: { type: "string", description: "Optional model this call intentionally substitutes. Recorded only for a theoretical usage summary; no baseline is run." },
       confidence_threshold: { type: "number", minimum: 0, maximum: 1, default: 0.8 }
     } },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
@@ -22,6 +26,7 @@ const TOOL_DEFINITIONS = [
       context: { description: "Optional minimum relevant JSON context.", anyOf: [{ type: "string" }, { type: "object" }, { type: "array" }, { type: "null" }] },
       candidates: { type: "array", minItems: 2, maxItems: 50, items: { type: "object", required: ["id", "value"], properties: { id: { type: "string" }, value: {} } } },
       criteria: { type: "array", minItems: 2, maxItems: 10, items: {} },
+      comparison_model: { type: "string", description: "Optional model this call intentionally substitutes. Recorded only for a theoretical usage summary; no baseline is run." },
       confidence_threshold: { type: "number", minimum: 0, maximum: 1, default: 0.7 }
     } },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
@@ -32,6 +37,7 @@ const TOOL_DEFINITIONS = [
     inputSchema: { type: "object", additionalProperties: false, required: ["source", "fields"], properties: {
       source: { description: "Source text or structured source to evaluate.", anyOf: [{ type: "string" }, { type: "object" }, { type: "array" }] },
       fields: { type: "array", minItems: 1, maxItems: 20, items: { type: "object", required: ["id", "instructions", "candidates"], properties: { id: { type: "string" }, instructions: { type: "string" }, candidates: { type: "array", minItems: 1, maxItems: 100, items: { type: "object", required: ["id", "value"], properties: { id: { type: "string" }, value: {}, description: {} } } } } } },
+      comparison_model: { type: "string", description: "Optional model this call intentionally substitutes. Recorded only for a theoretical usage summary; no baseline is run." },
       confidence_threshold: { type: "number", minimum: 0, maximum: 1, default: 0.8 }
     } },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
@@ -43,6 +49,7 @@ const TOOL_DEFINITIONS = [
       claim: { type: "string" },
       evidence: { description: "The source passage(s) or structured evidence.", anyOf: [{ type: "string" }, { type: "object" }, { type: "array" }] },
       context: { description: "Optional relevant JSON context.", anyOf: [{ type: "string" }, { type: "object" }, { type: "array" }, { type: "null" }] },
+      comparison_model: { type: "string", description: "Optional model this call intentionally substitutes. Recorded only for a theoretical usage summary; no baseline is run." },
       support_threshold: { type: "number", minimum: 0, maximum: 1, default: 0.85 }
     } },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
@@ -52,9 +59,18 @@ const TOOL_DEFINITIONS = [
     description: "Run up to 25 independent, narrow TypeSafe Choice, Score, or Noul questions against shared state. Returns raw typed signals for the caller's explicit policy.",
     inputSchema: { type: "object", additionalProperties: false, required: ["state", "questions"], properties: {
       state: { description: "Minimum relevant JSON state.", anyOf: [{ type: "string" }, { type: "object" }, { type: "array" }] },
-      questions: { type: "object", description: "Question id to a TypeSafe Choice, Score, or Noul question." }
+      questions: { type: "object", description: "Question id to a TypeSafe Choice, Score, or Noul question." },
+      comparison_model: { type: "string", description: "Optional model this call intentionally substitutes. Recorded only for a theoretical usage summary; no baseline is run." }
     } },
     annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: true }
+  },
+  {
+    name: "typesafe_usage_summary",
+    description: "Summarize Jev calls made by the current MCP server process: tool count, token usage, elapsed time, and declared substitute-model intent. It never runs a baseline and labels savings as theoretical.",
+    inputSchema: { type: "object", additionalProperties: false, properties: {
+      comparison_model: { type: "string", description: "Optional declared substitute model to filter the current-process summary." }
+    } },
+    annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false }
   },
   {
     name: "typesafe_escalation_gate",
@@ -72,6 +88,7 @@ const HANDLERS = {
   typesafe_extract: extract,
   typesafe_verify: verify,
   typesafe_judge: judge,
+  typesafe_usage_summary: summarizeJevUsage,
   typesafe_escalation_gate: escalationGate,
 };
 
@@ -108,7 +125,18 @@ export async function handleMessage(message, dependencies = {}) {
     const handler = HANDLERS[toolName];
     if (!handler) return response(id, textResult({ error: `Unknown TypeSafe-as-a-Judge tool: ${toolName}` }, true));
     try {
-      return response(id, textResult(await handler(message.params?.arguments ?? {}, dependencies)));
+      const toolArguments = message.params?.arguments ?? {};
+      const payload = await handler(toolArguments, dependencies);
+      if (JEV_TOOL_NAMES.has(toolName)) {
+        recordJevUsage({
+          tool_name: toolName,
+          model: payload.model,
+          usage: payload.usage,
+          elapsed_ms: payload.elapsed_ms,
+          comparison_model: toolArguments.comparison_model,
+        });
+      }
+      return response(id, textResult(payload));
     } catch (error) {
       return response(id, textResult({ error: formatError(error) }, true));
     }

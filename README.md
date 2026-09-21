@@ -23,6 +23,7 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request. Fo
 | `typesafe_extract` | Code has already found possible values in a source | A selected candidate or `no_match`; it never invents a value |
 | `typesafe_verify` | One claim needs to be checked against evidence | Support probability and a `proceed`/`review` recommendation |
 | `typesafe_judge` | Several independent narrow questions should run over shared state | Raw Choice, Score, and Noul signals for the caller's policy |
+| `typesafe_usage_summary` | A user asks how Jev was used or what it theoretically substituted | Current-process calls, tokens, elapsed time, per-tool breakdown, and declared substitute-model intent |
 | `typesafe_escalation_gate` | Existing confidence or risk signals need one deterministic gate | `proceed` when no signal fires, otherwise `review` |
 
 The tools are read-only. They do not edit files, approve actions, change records, invoke another model, or contact a third party.
@@ -274,6 +275,22 @@ Result:
 ```
 
 The gate is deterministic. It does not decide what the reviewer should do and cannot execute the next action.
+
+### Summarize theoretical Jev use
+
+Use `typesafe_usage_summary` when a user asks how much Jev was used, how long it took, or what it theoretically saved. It records only metadata from Jev calls made by the current MCP server process: call count, input/output tokens, elapsed time, tool name, and an optional declared substitute model.
+
+When a Jev call intentionally replaces a named model, include `comparison_model` in the call:
+
+```json
+{
+  "comparison_model": "gpt-5.6-luna"
+}
+```
+
+That records substitution intent; it does not run Luna or assert a measured saving. A summary can then report that Jev handled a number of calls that were declared as alternatives to Luna, alongside the observed Jev tokens and elapsed time. It must say that token, time, and cost savings are theoretical unless a real baseline run exists.
+
+The telemetry is process-local and resets when the MCP server restarts. It stores no request bodies, source text, credentials, or customer data.
 
 ## Confidence and escalation rules
 

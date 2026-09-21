@@ -34,6 +34,7 @@ test("route adds a review route and recommends review below the threshold", asyn
   assert.equal(request.questions.route.criteria.needs_review.includes("human"), true);
   assert.equal(result.route, "billing");
   assert.equal(result.recommended_action, "review");
+  assert.equal(typeof result.elapsed_ms, "number");
 });
 
 test("rank sends all candidates in one TypeSafe request and sorts by score", async () => {
