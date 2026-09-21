@@ -292,6 +292,38 @@ That records substitution intent; it does not run Luna or assert a measured savi
 
 The telemetry is process-local and resets when the MCP server restarts. It stores no request bodies, source text, credentials, or customer data.
 
+### Theoretical alternative-model estimates
+
+An LLM alternative will often consume a different token shape than Jev. Jev receives one narrow structured state and question set; an agentic LLM may also receive system instructions, repository rules, skill guidance, tool schemas, retrieved context, and reasoning tokens. Do not assume that Jev input and output tokens equal the alternative model's tokens.
+
+The measured development-planning example above showed a **harness-specific input factor of 11.3x**: the end-to-end Luna run reported 13,236 input tokens while Jev received 1,174 input tokens for the same internal planning question. That is `13,236 / 1,174 = 11.27`. It is not a universal Jev-versus-LLM multiplier:
+
+- the Luna number includes Codex's agent and repository context;
+- only 4,276 of those Luna input tokens were uncached, while 8,960 were cached;
+- the output relationship did not match the input relationship (52 Luna output tokens versus 71 Jev output tokens);
+- another task, client, reasoning setting, cache state, or retrieval strategy can produce a very different factor.
+
+When estimating an unrun alternative, report the method explicitly. A useful format is:
+
+```text
+estimated baseline input = observed Jev input x chosen input factor
+estimated baseline output = observed Jev output x chosen output factor
+estimated baseline cost = estimated tokens x documented API rates
+```
+
+Use an observed historical median for the same task class when available. If none exists, a same-token estimate is a simple lower-confidence assumption; the 11.3x input factor above is only an illustrative context-heavy Codex harness observation, not a default to apply automatically.
+
+### Billing and savings disclaimer
+
+Jev API usage and a coding-agent subscription are different cost planes:
+
+- A Jev call creates external TypeSafe API usage and therefore can add direct cash spend.
+- A Codex or Claude subscription may not create an incremental per-call API charge, but it still consumes plan quota, rate-limit capacity, context budget, and elapsed time.
+- An API-equivalent price for a subscription-backed run is an analytical estimate, not necessarily what the user was billed.
+- A theoretical alternative-model estimate can help compare likely token and API-price exposure, but it cannot prove time saved, quality improved, or money saved without a baseline run.
+
+The intended decision is therefore not just “which call is cheaper?” Consider direct cash spend, subscription/quota consumption, latency, consistency, the probability of review, and the cost of an incorrect decision. `typesafe_usage_summary` must label any unrun baseline as `theoretical` and must never present it as measured savings.
+
 ## Confidence and escalation rules
 
 Choice and Score answers include a confidence value derived from their probability distribution. Noul answers provide a probability that the statement is true; Noul does not provide a separate confidence value.
