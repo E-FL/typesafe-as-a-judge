@@ -307,6 +307,8 @@ This example uses a realistic internal planning question that arises while exten
 
 **Observation:** The agent should locate the primary MCP integration surface before planning the implementation, tests, and documentation.
 
+![Measured development-planning comparison](assets/development-planning-comparison.png)
+
 | Measure | Ordinary reasoning | TypeSafe MCP judgment |
 | --- | --- | --- |
 | Model | `gpt-5.6-luna` | `jev-1.13.0` |
