@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { setSessionModel } from "../server/session.mjs";
 import { JudgeInputError, escalationGate, evaluateSystemOne, extract, judge, rank, route, verify } from "../server/judge.mjs";
 
 function fakeResponse(body, status = 200) {
@@ -43,6 +44,17 @@ test("model comes from the call, then TYPESAFE_JEV_MODEL, then the default", asy
   const env = { TYPESAFE_JEV_MODEL: "jev-preview" };
   assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS, model: "jev-1.14.0" }, env)).body.model, "jev-1.14.0");
   assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS }, env)).body.model, "jev-preview");
+});
+
+test("session model beats the environment, and a per-call model beats the session", async () => {
+  setSessionModel("jev-preview");
+  try {
+    const env = { TYPESAFE_JEV_MODEL: "jev-1.13.0" };
+    assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS }, env)).body.model, "jev-preview");
+    assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS, model: "jev-1.14.0" }, env)).body.model, "jev-1.14.0");
+  } finally {
+    setSessionModel("");
+  }
 });
 
 test("long_context sends the header and allows a request above 256 KiB", async () => {

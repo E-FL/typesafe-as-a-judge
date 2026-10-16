@@ -1,3 +1,5 @@
+import { getSessionModel } from "./session.mjs";
+
 const API_URL = "https://api.typesafe.ai/v1/systemone";
 const DEFAULT_MODEL = "jev-latest";
 const MAX_PAYLOAD_BYTES = 256 * 1024;
@@ -94,7 +96,7 @@ function apiErrorMessage(status, body) {
 }
 
 export async function evaluateSystemOne(
-  { state, questions, model = process.env.TYPESAFE_JEV_MODEL?.trim() || DEFAULT_MODEL, long_context = false },
+  { state, questions, model = getSessionModel() ?? (process.env.TYPESAFE_JEV_MODEL?.trim() || DEFAULT_MODEL), long_context = false },
   { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = fetch, maxAttempts = 3 } = {},
 ) {
   const startedAt = performance.now();
