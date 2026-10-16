@@ -1,6 +1,9 @@
 const API_URL = "https://api.typesafe.ai/v1/systemone";
-const DEFAULT_MODEL = "jev-1.14.0";
+const DEFAULT_MODEL = "jev-latest";
 const MAX_PAYLOAD_BYTES = 256 * 1024;
+// Long context raises the TypeSafe limits from 64k to 262k tokens, so allow a proportionally larger request.
+const LONG_CONTEXT_MAX_PAYLOAD_BYTES = 1024 * 1024;
+const LONG_CONTEXT_HEADER = "TypeSafe-Danger-Zone-Long-Context";
 const RETRYABLE_STATUS_CODES = new Set([429, 529]);
 
 export class JudgeInputError extends Error {
@@ -57,13 +60,23 @@ function safeJson(value) {
   return JSON.stringify(value);
 }
 
-function assertPayloadSize(payload) {
+function assertPayloadSize(payload, limit = MAX_PAYLOAD_BYTES) {
   const bytes = Buffer.byteLength(safeJson(payload));
-  if (bytes > MAX_PAYLOAD_BYTES) {
+  if (bytes > limit) {
     throw new JudgeInputError(
-      `The TypeSafe request is ${bytes} bytes, above the ${MAX_PAYLOAD_BYTES}-byte safety limit. Narrow the state or candidate set.`,
+      `The TypeSafe request is ${bytes} bytes, above the ${limit}-byte safety limit. Narrow the state or candidate set.`,
     );
   }
+}
+
+// Optional per-call model and long-context settings shared by every Jev tool.
+function callOptions(input) {
+  const { model, long_context: longContext } = input;
+  if (model !== undefined) assertNonEmptyString(model, "model");
+  if (longContext !== undefined && typeof longContext !== "boolean") {
+    throw new JudgeInputError("long_context must be a boolean.");
+  }
+  return { model, long_context: longContext };
 }
 
 function sleep(milliseconds) {
@@ -81,7 +94,7 @@ function apiErrorMessage(status, body) {
 }
 
 export async function evaluateSystemOne(
-  { state, questions, model = DEFAULT_MODEL },
+  { state, questions, model = process.env.TYPESAFE_JEV_MODEL?.trim() || DEFAULT_MODEL, long_context = false },
   { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = fetch, maxAttempts = 3 } = {},
 ) {
   const startedAt = performance.now();
@@ -96,7 +109,7 @@ export async function evaluateSystemOne(
   }
 
   const payload = { state, model, questions };
-  assertPayloadSize(payload);
+  assertPayloadSize(payload, long_context ? LONG_CONTEXT_MAX_PAYLOAD_BYTES : MAX_PAYLOAD_BYTES);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     let response;
@@ -106,6 +119,7 @@ export async function evaluateSystemOne(
         headers: {
           authorization: `Bearer ${apiKey}`,
           "content-type": "application/json",
+          ...(long_context ? { [LONG_CONTEXT_HEADER]: "true" } : {}),
         },
         body: safeJson(payload),
         signal: AbortSignal.timeout(30_000),
@@ -217,6 +231,7 @@ export async function route(input, dependencies) {
 
   const response = await evaluateSystemOne(
     {
+      ...callOptions(input),
       state: input.state,
       questions: {
         route: {
@@ -273,7 +288,7 @@ export async function rank(input, dependencies) {
       },
     ]),
   );
-  const response = await evaluateSystemOne({ state, questions }, dependencies);
+  const response = await evaluateSystemOne({ ...callOptions(input), state, questions }, dependencies);
   const ranked = input.candidates
     .map((candidate) => {
       const result = answerSummary(response.answers[candidate.id]);
@@ -331,7 +346,7 @@ export async function extract(input, dependencies) {
     };
   }
 
-  const response = await evaluateSystemOne({ state: { source: input.source }, questions }, dependencies);
+  const response = await evaluateSystemOne({ ...callOptions(input), state: { source: input.source }, questions }, dependencies);
   const fields = input.fields.map((field) => {
     const result = answerSummary(response.answers[field.id]);
     const selected = result.value === "no_match" ? null : fieldCandidates.get(field.id).get(result.value);
@@ -364,6 +379,7 @@ export async function verify(input, dependencies) {
   const threshold = assertProbability(input.support_threshold, "support_threshold", 0.85);
   const response = await evaluateSystemOne(
     {
+      ...callOptions(input),
       state: {
         claim: input.claim,
         evidence: input.evidence,
@@ -409,7 +425,7 @@ export async function judge(input, dependencies) {
     }
     assertJson(question.instructions, `question '${id}' instructions`);
   }
-  const response = await evaluateSystemOne({ state: input.state, questions: input.questions }, dependencies);
+  const response = await evaluateSystemOne({ ...callOptions(input), state: input.state, questions: input.questions }, dependencies);
   return {
     ...metadata(response),
     answers: Object.fromEntries(Object.entries(response.answers).map(([id, answer]) => [id, answerSummary(answer)])),
