@@ -10,6 +10,21 @@ function fakeResponse(body, status = 200) {
   };
 }
 
+test("requests default to the pinned Jev model", async () => {
+  let request;
+  await evaluateSystemOne(
+    { state: { a: 1 }, questions: { q: { type: "noul", instructions: "Is a set?", criteria: { true: "a is set", false: "a is not set" } } } },
+    {
+      apiKey: "test-key",
+      fetchImpl: async (_url, options) => {
+        request = JSON.parse(options.body);
+        return fakeResponse({ model: "jev-1.14.0", answers: {}, usage: { input_tokens: 1, output_tokens: 1 } });
+      },
+    },
+  );
+  assert.equal(request.model, "jev-1.14.0");
+});
+
 test("route adds a review route and recommends review below the threshold", async () => {
   let request;
   const result = await route(

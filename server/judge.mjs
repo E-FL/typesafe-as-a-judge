@@ -1,5 +1,5 @@
 const API_URL = "https://api.typesafe.ai/v1/systemone";
-const DEFAULT_MODEL = "jev-latest";
+const DEFAULT_MODEL = "jev-1.14.0";
 const MAX_PAYLOAD_BYTES = 256 * 1024;
 const RETRYABLE_STATUS_CODES = new Set([429, 529]);
 

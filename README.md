@@ -469,7 +469,7 @@ The TypeSafe request is:
 ```text
 POST https://api.typesafe.ai/v1/systemone
 Authorization: Bearer <TYPESAFE_API_KEY>
-model: jev-latest
+model: jev-1.14.0
 ```
 
 The token is never included in the plugin package or repository.
