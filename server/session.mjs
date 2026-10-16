@@ -7,12 +7,29 @@ let state = {
   reason: "Default automatic policy.",
 };
 
+// Session default Jev model. Kept outside `state` so changing the policy never clears it.
+let sessionModel = null;
+
 function validString(value, fallback) {
   return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
 
+export function getSessionModel() {
+  return sessionModel;
+}
+
+// An empty string or "default" clears the session model so the environment or built-in default applies again.
+export function setSessionModel(model) {
+  if (typeof model !== "string") {
+    throw new Error("model must be a string; use an empty string to clear it.");
+  }
+  const trimmed = model.trim();
+  sessionModel = trimmed === "" || trimmed === "default" ? null : trimmed;
+  return sessionModel;
+}
+
 export function getSessionMode() {
-  return { ...state, scope: "current MCP server process; resets when the process restarts" };
+  return { ...state, jev_model: sessionModel, scope: "current MCP server process; resets when the process restarts" };
 }
 
 export function setSessionMode({ mode = "auto", billing_context = "unknown", reason = "" } = {}) {

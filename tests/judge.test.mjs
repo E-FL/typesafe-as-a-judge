@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { JudgeInputError, escalationGate, evaluateSystemOne, extract, rank, route, verify } from "../server/judge.mjs";
+import { setSessionModel } from "../server/session.mjs";
+import { JudgeInputError, escalationGate, evaluateSystemOne, extract, judge, rank, route, verify } from "../server/judge.mjs";
 
 function fakeResponse(body, status = 200) {
   return {
@@ -9,6 +10,74 @@ function fakeResponse(body, status = 200) {
     json: async () => body,
   };
 }
+
+const OK_BODY = { model: "jev-test", answers: {}, usage: { input_tokens: 1, output_tokens: 1 } };
+const NOUL_QUESTIONS = { q: { type: "noul", instructions: "Is a set?", criteria: { true: "a is set", false: "a is not set" } } };
+
+async function sentRequest(input, env = {}) {
+  const saved = process.env.TYPESAFE_USE_DEFAULT;
+  if ("TYPESAFE_USE_DEFAULT" in env) process.env.TYPESAFE_USE_DEFAULT = env.TYPESAFE_USE_DEFAULT;
+  else delete process.env.TYPESAFE_USE_DEFAULT;
+  let sent;
+  try {
+    await evaluateSystemOne(input, {
+      apiKey: "test-key",
+      fetchImpl: async (_url, options) => {
+        sent = { body: JSON.parse(options.body), headers: options.headers };
+        return fakeResponse(OK_BODY);
+      },
+    });
+  } finally {
+    if (saved === undefined) delete process.env.TYPESAFE_USE_DEFAULT;
+    else process.env.TYPESAFE_USE_DEFAULT = saved;
+  }
+  return sent;
+}
+
+test("requests default to jev-latest without the long-context header", async () => {
+  const sent = await sentRequest({ state: { a: 1 }, questions: NOUL_QUESTIONS });
+  assert.equal(sent.body.model, "jev-latest");
+  assert.equal("TypeSafe-Danger-Zone-Long-Context" in sent.headers, false);
+});
+
+test("model comes from the call, then TYPESAFE_USE_DEFAULT, then the default", async () => {
+  const env = { TYPESAFE_USE_DEFAULT: "jev-preview" };
+  assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS, model: "jev-1.14.0" }, env)).body.model, "jev-1.14.0");
+  assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS }, env)).body.model, "jev-preview");
+});
+
+test("session model beats the environment, and a per-call model beats the session", async () => {
+  setSessionModel("jev-preview");
+  try {
+    const env = { TYPESAFE_USE_DEFAULT: "jev-1.13.0" };
+    assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS }, env)).body.model, "jev-preview");
+    assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS, model: "jev-1.14.0" }, env)).body.model, "jev-1.14.0");
+  } finally {
+    setSessionModel("");
+  }
+});
+
+test("long_context sends the header and allows a request above 256 KiB", async () => {
+  const bigState = { text: "x".repeat(300 * 1024) };
+  await assert.rejects(sentRequest({ state: bigState, questions: NOUL_QUESTIONS }), JudgeInputError);
+  const sent = await sentRequest({ state: bigState, questions: NOUL_QUESTIONS, long_context: true });
+  assert.equal(sent.headers["TypeSafe-Danger-Zone-Long-Context"], "true");
+});
+
+test("tools forward model and long_context and validate them", async () => {
+  let sent;
+  const dependencies = {
+    apiKey: "test-key",
+    fetchImpl: async (_url, options) => {
+      sent = { body: JSON.parse(options.body), headers: options.headers };
+      return fakeResponse({ model: "jev-1.14.0", answers: { q: { type: "noul", noul: 0.9 } }, usage: { input_tokens: 1, output_tokens: 1 } });
+    },
+  };
+  await judge({ state: {}, questions: { q: { ...NOUL_QUESTIONS.q } }, model: "jev-1.14.0", long_context: true }, dependencies);
+  assert.equal(sent.body.model, "jev-1.14.0");
+  assert.equal(sent.headers["TypeSafe-Danger-Zone-Long-Context"], "true");
+  await assert.rejects(judge({ state: {}, questions: { q: { ...NOUL_QUESTIONS.q } }, long_context: "yes" }, dependencies), JudgeInputError);
+});
 
 test("route adds a review route and recommends review below the threshold", async () => {
   let request;

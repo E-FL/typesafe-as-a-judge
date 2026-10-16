@@ -474,10 +474,26 @@ model: jev-latest
 
 The token is never included in the plugin package or repository.
 
+## Models and long context
+
+The server sends `jev-latest` by default, which TypeSafe points at the latest stable release (`jev-1.13.0` today). Jev 1.14 (`jev-1.14.0`, available from 14 October 2026) is reachable as `jev-preview` or by its versioned id. Choose a model in one of two ways:
+
+- **Per call:** pass `model` to `typesafe_route`, `typesafe_rank`, `typesafe_extract`, `typesafe_verify`, or `typesafe_judge`, for example `"model": "jev-1.14.0"`.
+- **Per session:** call `typesafe_session_mode` with `use_default` (for example `"use_default": "jev-preview"`). It applies to every Jev call in the running MCP process until it restarts. Pass an empty string or `"default"` to clear it.
+- **Per environment:** set `TYPESAFE_USE_DEFAULT` in the environment that launches Codex or Claude. Both plugin manifests pass it through.
+
+Precedence, highest first: the per-call `model`, the session model, `TYPESAFE_USE_DEFAULT`, then `jev-latest`.
+
+Pin a versioned id when you have tuned confidence thresholds to a specific Jev version. The response `model` field always shows the versioned id that answered.
+
+Pass `long_context: true` to those same tools to send `TypeSafe-Danger-Zone-Long-Context: true`. This raises TypeSafe's per-request and per-question limits from 64k to 262k tokens, and the plugin's local request limit from 256 KiB to 1 MiB. TypeSafe documents it as slower and less accurate, so use it only when the state does not fit.
+
+Not included: TypeSafe's experimental image input and `box` question type (header-gated, aimed at `jev-preview`). They need file and image handling that this read-only, text-only plugin does not have.
+
 ## API and operational behavior
 
 - Node.js 20 or later is required.
-- Requests are limited to 256 KiB before being sent.
+- Requests are limited to 256 KiB before being sent (1 MiB with `long_context`).
 - Transient TypeSafe `429` and `529` responses receive bounded exponential backoff.
 - The server returns TypeSafe model and usage metadata with judgments.
 - `typesafe_rank` accepts at most 50 candidates.
