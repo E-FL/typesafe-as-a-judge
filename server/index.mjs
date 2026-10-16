@@ -14,7 +14,7 @@ const TOOL_DEFINITIONS = [
       instructions: { type: "string", description: "One narrow routing question." },
       routes: { type: "object", description: "Route id to rubric description. The tool adds needs_review." },
       review_route: { type: "string", description: "Optional reserved no-match route id; defaults to needs_review." },
-      model: { type: "string", description: "Optional Jev model id, e.g. jev-1.14.0 or jev-preview. Defaults to the session model, then TYPESAFE_JEV_MODEL, then jev-latest." },
+      model: { type: "string", description: "Optional Jev model id, e.g. jev-1.14.0 or jev-preview. Defaults to the session model, then TYPESAFE_USE_DEFAULT, then jev-latest." },
       long_context: { type: "boolean", description: "Optional. Send the long-context header (262k tokens instead of 64k). Slower and less accurate; use only when the state does not fit." },
       comparison_model: { type: "string", description: "Optional model this call intentionally substitutes. Recorded only for a theoretical usage summary; no baseline is run." },
       confidence_threshold: { type: "number", minimum: 0, maximum: 1, default: 0.8 }
@@ -29,7 +29,7 @@ const TOOL_DEFINITIONS = [
       context: { description: "Optional minimum relevant JSON context.", anyOf: [{ type: "string" }, { type: "object" }, { type: "array" }, { type: "null" }] },
       candidates: { type: "array", minItems: 2, maxItems: 50, items: { type: "object", required: ["id", "value"], properties: { id: { type: "string" }, value: {} } } },
       criteria: { type: "array", minItems: 2, maxItems: 10, items: {} },
-      model: { type: "string", description: "Optional Jev model id, e.g. jev-1.14.0 or jev-preview. Defaults to the session model, then TYPESAFE_JEV_MODEL, then jev-latest." },
+      model: { type: "string", description: "Optional Jev model id, e.g. jev-1.14.0 or jev-preview. Defaults to the session model, then TYPESAFE_USE_DEFAULT, then jev-latest." },
       long_context: { type: "boolean", description: "Optional. Send the long-context header (262k tokens instead of 64k). Slower and less accurate; use only when the state does not fit." },
       comparison_model: { type: "string", description: "Optional model this call intentionally substitutes. Recorded only for a theoretical usage summary; no baseline is run." },
       confidence_threshold: { type: "number", minimum: 0, maximum: 1, default: 0.7 }
@@ -42,7 +42,7 @@ const TOOL_DEFINITIONS = [
     inputSchema: { type: "object", additionalProperties: false, required: ["source", "fields"], properties: {
       source: { description: "Source text or structured source to evaluate.", anyOf: [{ type: "string" }, { type: "object" }, { type: "array" }] },
       fields: { type: "array", minItems: 1, maxItems: 20, items: { type: "object", required: ["id", "instructions", "candidates"], properties: { id: { type: "string" }, instructions: { type: "string" }, candidates: { type: "array", minItems: 1, maxItems: 100, items: { type: "object", required: ["id", "value"], properties: { id: { type: "string" }, value: {}, description: {} } } } } } },
-      model: { type: "string", description: "Optional Jev model id, e.g. jev-1.14.0 or jev-preview. Defaults to the session model, then TYPESAFE_JEV_MODEL, then jev-latest." },
+      model: { type: "string", description: "Optional Jev model id, e.g. jev-1.14.0 or jev-preview. Defaults to the session model, then TYPESAFE_USE_DEFAULT, then jev-latest." },
       long_context: { type: "boolean", description: "Optional. Send the long-context header (262k tokens instead of 64k). Slower and less accurate; use only when the state does not fit." },
       comparison_model: { type: "string", description: "Optional model this call intentionally substitutes. Recorded only for a theoretical usage summary; no baseline is run." },
       confidence_threshold: { type: "number", minimum: 0, maximum: 1, default: 0.8 }
@@ -56,7 +56,7 @@ const TOOL_DEFINITIONS = [
       claim: { type: "string" },
       evidence: { description: "The source passage(s) or structured evidence.", anyOf: [{ type: "string" }, { type: "object" }, { type: "array" }] },
       context: { description: "Optional relevant JSON context.", anyOf: [{ type: "string" }, { type: "object" }, { type: "array" }, { type: "null" }] },
-      model: { type: "string", description: "Optional Jev model id, e.g. jev-1.14.0 or jev-preview. Defaults to the session model, then TYPESAFE_JEV_MODEL, then jev-latest." },
+      model: { type: "string", description: "Optional Jev model id, e.g. jev-1.14.0 or jev-preview. Defaults to the session model, then TYPESAFE_USE_DEFAULT, then jev-latest." },
       long_context: { type: "boolean", description: "Optional. Send the long-context header (262k tokens instead of 64k). Slower and less accurate; use only when the state does not fit." },
       comparison_model: { type: "string", description: "Optional model this call intentionally substitutes. Recorded only for a theoretical usage summary; no baseline is run." },
       support_threshold: { type: "number", minimum: 0, maximum: 1, default: 0.85 }
@@ -69,7 +69,7 @@ const TOOL_DEFINITIONS = [
     inputSchema: { type: "object", additionalProperties: false, required: ["state", "questions"], properties: {
       state: { description: "Minimum relevant JSON state.", anyOf: [{ type: "string" }, { type: "object" }, { type: "array" }] },
       questions: { type: "object", description: "Question id to a TypeSafe Choice, Score, or Noul question." },
-      model: { type: "string", description: "Optional Jev model id, e.g. jev-1.14.0 or jev-preview. Defaults to the session model, then TYPESAFE_JEV_MODEL, then jev-latest." },
+      model: { type: "string", description: "Optional Jev model id, e.g. jev-1.14.0 or jev-preview. Defaults to the session model, then TYPESAFE_USE_DEFAULT, then jev-latest." },
       long_context: { type: "boolean", description: "Optional. Send the long-context header (262k tokens instead of 64k). Slower and less accurate; use only when the state does not fit." },
       comparison_model: { type: "string", description: "Optional model this call intentionally substitutes. Recorded only for a theoretical usage summary; no baseline is run." }
     } },
@@ -85,12 +85,12 @@ const TOOL_DEFINITIONS = [
   },
   {
     name: "typesafe_session_mode",
-    description: "Set or inspect the current MCP process Jev policy and default Jev model. Use enabled to force Jev, disabled to block Jev calls, or auto for the skill's policy; use model to choose which Jev model this session's calls use. This does not change Codex or Claude global configuration.",
+    description: "Set or inspect the current MCP process Jev policy and default Jev model. Use enabled to force Jev, disabled to block Jev calls, or auto for the skill's policy; use use_default to choose which Jev model this session's calls use. This does not change Codex or Claude global configuration.",
     inputSchema: { type: "object", additionalProperties: false, properties: {
       mode: { type: "string", enum: ["auto", "enabled", "disabled"], description: "Session Jev policy. Omit to inspect the current mode." },
       billing_context: { type: "string", enum: ["unknown", "plan", "api"], description: "Optional context supplied by the user or host; never inferred from credentials." },
       reason: { type: "string", description: "Why this session policy was selected." },
-      model: { type: "string", description: "Jev model for this session's calls, e.g. jev-preview or jev-1.14.0. Overrides TYPESAFE_JEV_MODEL and jev-latest; a per-call model still wins. Empty string or \"default\" clears it. Omit to leave it unchanged." }
+      use_default: { type: "string", description: "Default Jev model for this session's calls, e.g. jev-preview or jev-1.14.0. Overrides TYPESAFE_USE_DEFAULT and jev-latest; a per-call model still wins. Empty string or \"default\" clears it. Omit to leave it unchanged." }
     } },
     annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: true, openWorldHint: false }
   },
@@ -112,7 +112,7 @@ const HANDLERS = {
   typesafe_judge: judge,
   typesafe_usage_summary: summarizeJevUsage,
   typesafe_session_mode: (input) => {
-    if (input?.model !== undefined) setSessionModel(input.model);
+    if (input?.use_default !== undefined) setSessionModel(input.use_default);
     return input?.mode === undefined ? getSessionMode() : setSessionMode(input);
   },
   typesafe_escalation_gate: escalationGate,

@@ -15,9 +15,9 @@ const OK_BODY = { model: "jev-test", answers: {}, usage: { input_tokens: 1, outp
 const NOUL_QUESTIONS = { q: { type: "noul", instructions: "Is a set?", criteria: { true: "a is set", false: "a is not set" } } };
 
 async function sentRequest(input, env = {}) {
-  const saved = process.env.TYPESAFE_JEV_MODEL;
-  if ("TYPESAFE_JEV_MODEL" in env) process.env.TYPESAFE_JEV_MODEL = env.TYPESAFE_JEV_MODEL;
-  else delete process.env.TYPESAFE_JEV_MODEL;
+  const saved = process.env.TYPESAFE_USE_DEFAULT;
+  if ("TYPESAFE_USE_DEFAULT" in env) process.env.TYPESAFE_USE_DEFAULT = env.TYPESAFE_USE_DEFAULT;
+  else delete process.env.TYPESAFE_USE_DEFAULT;
   let sent;
   try {
     await evaluateSystemOne(input, {
@@ -28,8 +28,8 @@ async function sentRequest(input, env = {}) {
       },
     });
   } finally {
-    if (saved === undefined) delete process.env.TYPESAFE_JEV_MODEL;
-    else process.env.TYPESAFE_JEV_MODEL = saved;
+    if (saved === undefined) delete process.env.TYPESAFE_USE_DEFAULT;
+    else process.env.TYPESAFE_USE_DEFAULT = saved;
   }
   return sent;
 }
@@ -40,8 +40,8 @@ test("requests default to jev-latest without the long-context header", async () 
   assert.equal("TypeSafe-Danger-Zone-Long-Context" in sent.headers, false);
 });
 
-test("model comes from the call, then TYPESAFE_JEV_MODEL, then the default", async () => {
-  const env = { TYPESAFE_JEV_MODEL: "jev-preview" };
+test("model comes from the call, then TYPESAFE_USE_DEFAULT, then the default", async () => {
+  const env = { TYPESAFE_USE_DEFAULT: "jev-preview" };
   assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS, model: "jev-1.14.0" }, env)).body.model, "jev-1.14.0");
   assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS }, env)).body.model, "jev-preview");
 });
@@ -49,7 +49,7 @@ test("model comes from the call, then TYPESAFE_JEV_MODEL, then the default", asy
 test("session model beats the environment, and a per-call model beats the session", async () => {
   setSessionModel("jev-preview");
   try {
-    const env = { TYPESAFE_JEV_MODEL: "jev-1.13.0" };
+    const env = { TYPESAFE_USE_DEFAULT: "jev-1.13.0" };
     assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS }, env)).body.model, "jev-preview");
     assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS, model: "jev-1.14.0" }, env)).body.model, "jev-1.14.0");
   } finally {

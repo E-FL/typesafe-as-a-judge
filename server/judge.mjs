@@ -96,7 +96,7 @@ function apiErrorMessage(status, body) {
 }
 
 export async function evaluateSystemOne(
-  { state, questions, model = getSessionModel() ?? (process.env.TYPESAFE_JEV_MODEL?.trim() || DEFAULT_MODEL), long_context = false },
+  { state, questions, model = getSessionModel() ?? (process.env.TYPESAFE_USE_DEFAULT?.trim() || DEFAULT_MODEL), long_context = false },
   { apiKey = process.env.TYPESAFE_API_KEY, fetchImpl = fetch, maxAttempts = 3 } = {},
 ) {
   const startedAt = performance.now();

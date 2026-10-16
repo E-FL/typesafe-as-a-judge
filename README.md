@@ -479,10 +479,10 @@ The token is never included in the plugin package or repository.
 The server sends `jev-latest` by default, which TypeSafe points at the latest stable release (`jev-1.13.0` today). Jev 1.14 (`jev-1.14.0`, available from 14 October 2026) is reachable as `jev-preview` or by its versioned id. Choose a model in one of two ways:
 
 - **Per call:** pass `model` to `typesafe_route`, `typesafe_rank`, `typesafe_extract`, `typesafe_verify`, or `typesafe_judge`, for example `"model": "jev-1.14.0"`.
-- **Per session:** call `typesafe_session_mode` with `model` (for example `"model": "jev-preview"`). It applies to every Jev call in the running MCP process until it restarts. Pass an empty string or `"default"` to clear it.
-- **Per environment:** set `TYPESAFE_JEV_MODEL` in the environment that launches Codex or Claude. Both plugin manifests pass it through.
+- **Per session:** call `typesafe_session_mode` with `use_default` (for example `"use_default": "jev-preview"`). It applies to every Jev call in the running MCP process until it restarts. Pass an empty string or `"default"` to clear it.
+- **Per environment:** set `TYPESAFE_USE_DEFAULT` in the environment that launches Codex or Claude. Both plugin manifests pass it through.
 
-Precedence, highest first: the per-call `model`, the session model, `TYPESAFE_JEV_MODEL`, then `jev-latest`.
+Precedence, highest first: the per-call `model`, the session model, `TYPESAFE_USE_DEFAULT`, then `jev-latest`.
 
 Pin a versioned id when you have tuned confidence thresholds to a specific Jev version. The response `model` field always shows the versioned id that answered.
 
