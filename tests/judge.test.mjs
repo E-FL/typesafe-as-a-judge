@@ -57,6 +57,17 @@ test("session model beats the environment, and a per-call model beats the sessio
   }
 });
 
+test("an explicit per-call model beats a preview default in both the session and the environment", async () => {
+  setSessionModel("jev-preview");
+  try {
+    const env = { TYPESAFE_USE_DEFAULT: "jev-preview" };
+    assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS, model: "jev-latest" }, env)).body.model, "jev-latest");
+    assert.equal((await sentRequest({ state: {}, questions: NOUL_QUESTIONS, model: "jev-1.13.0" }, env)).body.model, "jev-1.13.0");
+  } finally {
+    setSessionModel("");
+  }
+});
+
 test("long_context sends the header and allows a request above 256 KiB", async () => {
   const bigState = { text: "x".repeat(300 * 1024) };
   await assert.rejects(sentRequest({ state: bigState, questions: NOUL_QUESTIONS }), JudgeInputError);

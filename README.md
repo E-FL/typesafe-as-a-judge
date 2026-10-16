@@ -305,7 +305,7 @@ Use `typesafe_session_mode` when a user explicitly controls the feature:
 }
 ```
 
-Use `mode: "disabled"` to block Jev tool calls for the current MCP process, or `mode: "auto"` to restore the automatic policy. The tool does not edit Codex or Claude configuration and does not change the user's subscription or API billing.
+Use `mode: "disabled"` to block Jev tool calls for the current MCP process, or `mode: "auto"` to restore the automatic policy. Add `"use_default": "jev-preview"` (or `jev-1.13.0`, `jev-latest`, any Jev model id) to choose which model this session's calls use; see [Models and long context](#models-and-long-context). The tool does not edit Codex or Claude configuration and does not change the user's subscription or API billing.
 
 In automatic mode, the skill favors Jev for repeated or bounded semantic decisions—routing, ranking, candidate selection, verification, and confidence gates—especially when plan/quota conservation or review reduction matters. It does not favor Jev for exact deterministic work, open-ended implementation, permissions, tenant isolation, security authority, financial actions, destructive operations, or unsafe sensitive data.
 
@@ -447,6 +447,8 @@ claude plugin install typesafe-as-a-judge@typesafe-as-a-judge
 
 Run the same guided setup from the repository checkout. Restart Claude Code and approve the project/plugin MCP server when prompted.
 
+Claude Code reads the root `.mcp.json` (it locates the launcher with `${CLAUDE_PLUGIN_ROOT}`); Codex reads `.codex-mcp.json`. Keep the two in sync when you change the server command.
+
 ### macOS and Linux
 
 ```bash
@@ -476,19 +478,37 @@ The token is never included in the plugin package or repository.
 
 ## Models and long context
 
-The server sends `jev-latest` by default, which TypeSafe points at the latest stable release (`jev-1.13.0` today). Jev 1.14 (`jev-1.14.0`, available from 14 October 2026) is reachable as `jev-preview` or by its versioned id. Choose a model in one of two ways:
+**The built-in default is `jev-latest`, not the preview.** TypeSafe points `jev-latest` at the latest stable release (`jev-1.13.0` today). Jev 1.14 (`jev-1.14.0`, available from 14 October 2026) is reachable as `jev-preview` or by its versioned id. Nothing changes for you until you opt in.
 
-- **Per call:** pass `model` to `typesafe_route`, `typesafe_rank`, `typesafe_extract`, `typesafe_verify`, or `typesafe_judge`, for example `"model": "jev-1.14.0"`.
-- **Per session:** call `typesafe_session_mode` with `use_default` (for example `"use_default": "jev-preview"`). It applies to every Jev call in the running MCP process until it restarts. Pass an empty string or `"default"` to clear it.
-- **Per environment:** set `TYPESAFE_USE_DEFAULT` in the environment that launches Codex or Claude. Both plugin manifests pass it through.
+### Make the preview your default
 
-Precedence, highest first: the per-call `model`, the session model, `TYPESAFE_USE_DEFAULT`, then `jev-latest`.
+Set `TYPESAFE_USE_DEFAULT` once in the environment that launches Codex or Claude, then restart them. Every session uses that model from then on, and both plugin manifests already pass the variable through.
 
-Pin a versioned id when you have tuned confidence thresholds to a specific Jev version. The response `model` field always shows the versioned id that answered.
+```powershell
+[Environment]::SetEnvironmentVariable("TYPESAFE_USE_DEFAULT", "jev-preview", "User")
+```
 
-Pass `long_context: true` to those same tools to send `TypeSafe-Danger-Zone-Long-Context: true`. This raises TypeSafe's per-request and per-question limits from 64k to 262k tokens, and the plugin's local request limit from 256 KiB to 1 MiB. TypeSafe documents it as slower and less accurate, so use it only when the state does not fit.
+To go back to the built-in default, remove the variable (or set it to `jev-latest`).
 
-Not included: TypeSafe's experimental image input and `box` question type (header-gated, aimed at `jev-preview`). They need file and image handling that this read-only, text-only plugin does not have.
+### Ask for a specific version
+
+Any Jev model id is accepted: a version such as `jev-1.13.0` or `jev-1.14.0`, or an alias such as `jev-latest` or `jev-preview`. Choose it at the level you need:
+
+- **Per call (explicit):** pass `model` to `typesafe_route`, `typesafe_rank`, `typesafe_extract`, `typesafe_verify`, or `typesafe_judge`, for example `"model": "jev-1.13.0"` or `"model": "jev-latest"`. This wins over everything else, so it also overrides a `jev-preview` environment default for that one call.
+- **Per session:** call `typesafe_session_mode` with `use_default`, for example `"use_default": "jev-1.14.0"`. It applies to every Jev call in the running MCP process until it restarts. Pass an empty string or `"default"` to clear it.
+- **Per environment:** `TYPESAFE_USE_DEFAULT`, as above.
+
+Precedence, highest first: the per-call `model`, the session `use_default`, `TYPESAFE_USE_DEFAULT`, then `jev-latest`.
+
+Pin a versioned id when you have tuned confidence thresholds to a specific Jev version. Aliases can move to a newer release. The response `model` field always shows the versioned id that answered.
+
+### Long context
+
+Pass `long_context: true` to the same tools to send `TypeSafe-Danger-Zone-Long-Context: true`. This raises TypeSafe's per-request and per-question limits from 64k to 262k tokens, and the plugin's local request limit from 256 KiB to 1 MiB. TypeSafe documents it as slower and less accurate, so use it only when the state does not fit.
+
+### Not included
+
+TypeSafe's experimental image input and `box` question type (header-gated, aimed at `jev-preview`) need file and image handling that this read-only, text-only plugin does not have.
 
 ## API and operational behavior
 
